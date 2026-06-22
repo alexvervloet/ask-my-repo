@@ -1,0 +1,6 @@
+numpy>=1.26
+requests>=2.31
+psycopg[binary]>=3.1   # Postgres driver
+pgvector>=0.3          # vector type + psycopg adapter
+anthropic>=0.40        # foundation fallback for completions
+voyageai>=0.3          # foundation fallback for embeddings
