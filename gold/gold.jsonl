@@ -1,0 +1,14 @@
+# Gold set for self-indexing ask_my_repo.
+{"question": "How are Python source files discovered in a directory tree?", "relevant_file": "ask_my_repo/walker.py", "relevant_symbols": ["walk_python_files"]}
+{"question": "Which directories are ignored when walking the repo?", "relevant_file": "ask_my_repo/walker.py", "relevant_symbols": ["DEFAULT_IGNORE_DIRS", "_walk_python_files"]}
+{"question": "How does file discovery honor .gitignore and pick up untracked files?", "relevant_file": "ask_my_repo/walker.py", "relevant_symbols": ["_git_python_files", "walk_python_files"]}
+{"question": "How is a deterministic chunk id computed?", "relevant_file": "ask_my_repo/chunker.py", "relevant_symbols": ["compute_chunk_id"]}
+{"question": "How are large classes split into separate chunks?", "relevant_file": "ask_my_repo/chunker.py", "relevant_symbols": ["_emit_class_split", "chunk_source"]}
+{"question": "How does the system fall back from a local model to a foundation model for completions?", "relevant_file": "ask_my_repo/client.py", "relevant_symbols": ["complete"]}
+{"question": "How are embeddings generated with a local-first fallback?", "relevant_file": "ask_my_repo/client.py", "relevant_symbols": ["embed"]}
+{"question": "What database schema stores the chunks and where is the chunk id kept?", "relevant_file": "ask_my_repo/indexer.py", "relevant_symbols": ["ensure_schema"]}
+{"question": "How are chunk embeddings encoded and decoded for storage?", "relevant_file": "ask_my_repo/indexer.py", "relevant_symbols": ["upsert_chunks", "connect"]}
+{"question": "How does retrieval score a question against stored chunks?", "relevant_file": "ask_my_repo/retrieval.py", "relevant_symbols": ["retrieve"]}
+{"question": "How is recall@k computed in the evaluation?", "relevant_file": "ask_my_repo/eval.py", "relevant_symbols": ["evaluate"]}
+{"question": "How is the grounded answer prompt built from retrieved chunks?", "relevant_file": "ask_my_repo/answer.py", "relevant_symbols": ["build_prompt"]}
+{"question": "How is the whole repository indexed end to end?", "relevant_file": "ask_my_repo/indexer.py", "relevant_symbols": ["index_repo"]}
