@@ -133,3 +133,17 @@ knob rather than shipped.
 - Shared text across embedded chunks is a double-edged tool: context that lifts
   coarse (file) retrieval can erase the fine distinctions that precise (symbol)
   retrieval depends on. Add it where chunks are context-poor, not everywhere.
+
+---
+
+## See also — the framework comparison
+
+A sibling project, **askrepo-langchain**, rebuilds this tool's RAG pipeline and
+agent loop on **LangChain + LangGraph** and measures the two implementations
+against each other on this repo's own gold set — what the framework buys, what
+it costs, and when to reach for it. The short version: LangGraph earns its keep
+for the stateful agent runtime (durable, resumable checkpoints the hand-rolled
+loop can't have), while the RAG chain *tied* on accuracy and cost the hybrid
+retrieval and cost-visibility built here. Its `COMPARISON.md` is the write-up;
+its `LESSONS.md` carries the transferable lessons in the same spirit as this
+file.
