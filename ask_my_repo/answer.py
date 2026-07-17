@@ -7,6 +7,7 @@ back to file:line.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 from . import client
@@ -65,3 +66,20 @@ def answer(
     prompt = build_prompt(question, chunks)
     text = client.complete(prompt, system=SYSTEM_PROMPT)
     return Answer(question=question, text=text, chunks=chunks)
+
+
+def answer_stream(
+    question: str,
+    k: int | None = None,
+    *,
+    dsn: str | None = None,
+) -> tuple[list[RetrievedChunk], Iterator[str]]:
+    """Like `answer()`, but returns the chunks up front and the text as a
+    stream of deltas — for callers (a web gateway) that want to render sources
+    before the answer finishes."""
+    k = k or CONFIG.default_k
+    chunks = retrieve(question, k, dsn=dsn)
+    if not chunks:
+        return [], iter(["No indexed code found. Run the indexer first."])
+    prompt = build_prompt(question, chunks)
+    return chunks, client.complete_stream(prompt, system=SYSTEM_PROMPT)
