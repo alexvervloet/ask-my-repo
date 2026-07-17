@@ -15,7 +15,9 @@ official `voyageai` SDK.
 
 from __future__ import annotations
 
+import json
 import logging
+from collections.abc import Iterator
 from functools import lru_cache
 
 import requests
@@ -90,6 +92,38 @@ def _foundation_embed(texts: list[str]) -> list[list[float]]:
     return result.embeddings
 
 
+def _local_complete_stream(prompt: str, system: str | None) -> Iterator[str]:
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+    with requests.post(
+        f"{CONFIG.lmstudio_base_url}/chat/completions",
+        json={
+            "model": CONFIG.lmstudio_chat_model,
+            "messages": messages,
+            "temperature": 0.0,
+            "stream": True,
+        },
+        timeout=max(CONFIG.local_timeout_s, 60),
+        stream=True,
+    ) as resp:
+        resp.raise_for_status()
+        got_any = False
+        for line in resp.iter_lines():
+            if not line.startswith(b"data: "):
+                continue
+            payload = line[len(b"data: "):]
+            if payload.strip() == b"[DONE]":
+                break
+            delta = json.loads(payload)["choices"][0].get("delta", {}).get("content")
+            if delta:
+                got_any = True
+                yield delta
+        if not got_any:
+            raise ModelError("local model streamed no content")
+
+
 def _foundation_complete(prompt: str, system: str | None) -> str:
     client = _anthropic_client()
     kwargs = {
@@ -102,6 +136,19 @@ def _foundation_complete(prompt: str, system: str | None) -> str:
         kwargs["system"] = system
     response = client.messages.create(**kwargs)
     return "".join(b.text for b in response.content if b.type == "text")
+
+
+def _foundation_complete_stream(prompt: str, system: str | None) -> Iterator[str]:
+    kwargs = {
+        "model": CONFIG.anthropic_model,
+        "max_tokens": 4096,
+        "thinking": {"type": "adaptive"},
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    if system:
+        kwargs["system"] = system
+    with _anthropic_client().messages.stream(**kwargs) as stream:
+        yield from stream.text_stream
 
 
 # --------------------------------------------------------------------------- #
@@ -148,4 +195,37 @@ def complete(prompt: str, *, system: str | None = None, prefer_local: bool | Non
     except Exception as exc:  # noqa: BLE001
         raise ModelError(
             f"completion failed on both local and foundation: {exc}"
+        ) from exc
+
+
+def complete_stream(
+    prompt: str, *, system: str | None = None, prefer_local: bool | None = None
+) -> Iterator[str]:
+    """Like `complete()`, but yields text deltas as they arrive.
+
+    Falling back is only possible before the first delta has been yielded —
+    once tokens have been emitted they cannot be unsaid, so a mid-stream local
+    failure propagates instead of restarting on the foundation model.
+    """
+    if prefer_local is None:
+        prefer_local = CONFIG.prefer_local
+    if prefer_local:
+        gen = _local_complete_stream(prompt, system)
+        try:
+            first = next(gen)
+        except StopIteration:
+            log.warning("stream: local model yielded nothing; falling back to Claude")
+        except Exception as exc:  # noqa: BLE001 - any local failure -> fall back
+            log.warning("stream: local model failed (%s); falling back to Claude", exc)
+        else:
+            log.debug("stream: served by LM Studio")
+            yield first
+            yield from gen
+            return
+    try:
+        log.debug("stream: served by Claude")
+        yield from _foundation_complete_stream(prompt, system)
+    except Exception as exc:  # noqa: BLE001
+        raise ModelError(
+            f"streaming completion failed on both local and foundation: {exc}"
         ) from exc
