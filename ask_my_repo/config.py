@@ -51,6 +51,11 @@ class Config:
     )
     # How long to wait on the local server before declaring it dead and falling back.
     local_timeout_s: float = float(os.getenv("AMR_LOCAL_TIMEOUT", "5"))
+    # AMR_PREFER_LOCAL=0 skips the LM Studio attempt entirely. Set it where the
+    # local box cannot exist (CI, a deployed gateway) — and when building an
+    # index whose queries will run in such a place: index and query embeddings
+    # must come from the same model, so both sides must force the same path.
+    prefer_local: bool = _env_bool("AMR_PREFER_LOCAL", True)
 
     # --- Foundation fallback: completions (Anthropic Claude) ---
     anthropic_model: str = os.getenv("AMR_ANTHROPIC_MODEL", "claude-opus-4-8")

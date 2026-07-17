@@ -107,10 +107,12 @@ def _foundation_complete(prompt: str, system: str | None) -> str:
 # --------------------------------------------------------------------------- #
 # Public seam
 # --------------------------------------------------------------------------- #
-def embed(texts: list[str], *, prefer_local: bool = True) -> list[list[float]]:
+def embed(texts: list[str], *, prefer_local: bool | None = None) -> list[list[float]]:
     """Embed a list of texts. Returns one vector per input, order preserved."""
     if not texts:
         return []
+    if prefer_local is None:
+        prefer_local = CONFIG.prefer_local
     if prefer_local:
         try:
             vecs = _local_embed(texts)
@@ -126,8 +128,10 @@ def embed(texts: list[str], *, prefer_local: bool = True) -> list[list[float]]:
         raise ModelError(f"embedding failed on both local and foundation: {exc}") from exc
 
 
-def complete(prompt: str, *, system: str | None = None, prefer_local: bool = True) -> str:
+def complete(prompt: str, *, system: str | None = None, prefer_local: bool | None = None) -> str:
     """Generate a completion for `prompt` with an optional `system` prompt."""
+    if prefer_local is None:
+        prefer_local = CONFIG.prefer_local
     if prefer_local:
         try:
             out = _local_complete(prompt, system)
